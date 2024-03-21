@@ -44,11 +44,37 @@ const signup = async (req, res) => {
     console.log(error.message);
   }
 };
+
 const login = async (req, res) => {
-  return res.send("Login Page");
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+    const isPasswordCorrect = await bcryptjs.compare(password, user.password);
+    if (!user || !isPasswordCorrect) {
+      return res
+        .status(400)
+        .send({ message: "Invalid username or password. " });
+    }
+
+    generateTokenAndSetCookie(user._id, res);
+
+    return res.status(200).send({
+      _id: user.id,
+      fullname: user.fullname,
+      username: user.username,
+      profilePic: user.profilePic,
+    });
+  } catch (error) {
+    return res.status(400).send({ message: error.message });
+  }
 };
 const logout = async (req, res) => {
-  return res.send("logout Page");
+  try {
+    res.cookie("jwt", "", { maxAge: 0 });
+    return res.status(400).send({ message: "Logged out successfully. " });
+  } catch (error) {
+    return res.status(400).send({ messga: error.message });
+  }
 };
 
 export { signup, login, logout };
